@@ -16,15 +16,14 @@ pub fn main() !void {
     if (std.mem.eql(u8, operation, "manifest")) {
         const manifest =
             \\ {
-            \\ "name": "Name of your package",
+            \\ "name": "robber",
             \\ "version": "0.1",
-            \\ "description": "A short description that explains the function of your package",
+            \\ "description": "This package provides a robber module that can be used to convert text to robber language",
             \\ "transforms": [
             \\     {
             \\         "from": "robber",
             \\         "to": [
-            \\             "html",
-            \\             "latex"
+            \\             "any"
             \\         ],
             \\         "arguments": []
             \\     }
@@ -48,14 +47,25 @@ pub fn main() !void {
         var buf: [10000]u8 = undefined;
         const read = try stdin.readAll(buf[0..]);
         if (parser.parse(buf[0..read])) |tree| {
+            const multiline = !tree.root.Object.get("inline").?.Bool;
             const robber = robberTransform(tree.root.Object.get("data").?.String);
+            if (multiline) {
+                _ = try stdout.write(
+                    \\[{"name": "__paragraph", "arguments": {}, "children": 
+                );
+            }
             _ = try stdout.write(
-                \\[{"name": "raw", "data": 
+                \\[{"name": "__text", "data": 
             );
             try std.json.encodeJsonString(robber, .{}, stdout);
             _ = try stdout.write(
                 \\}]
             );
+            if (multiline) {
+                _ = try stdout.write(
+                    \\}]
+                );
+            }
         } else |_| {
             _ = try stderr.write("Input is too large\n");
             std.os.exit(0);
